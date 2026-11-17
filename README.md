@@ -2,6 +2,8 @@
 
 # o-rdp
 
+*Idea: [nerdcules](https://github.com/nerdcules) · Written by: Claude, in [Claude Code](https://claude.com/claude-code)*
+
 ![o-rdp listing the PCs on the network (made-up hosts)](docs/screenshot.png)
 
 o-rdp finds the PCs with Remote Desktop on your local network and connects to
