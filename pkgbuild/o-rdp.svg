@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f8a9a"/>
+      <stop offset="1" stop-color="#0a3f55"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- A monitor showing another computer's desktop: a window and a taskbar. -->
+  <rect x="9" y="10" width="46" height="32" rx="4" fill="#eafcff"/>
+  <rect x="12" y="13" width="40" height="26" rx="1.5" fill="#0a3f55"/>
+  <rect x="26" y="17" width="22" height="13" rx="1.5" fill="#5fd3e3"/>
+  <rect x="26" y="17" width="22" height="3.2" rx="1.5" fill="#bdf2f8"/>
+  <rect x="12" y="35" width="40" height="4" fill="#0f8a9a"/>
+  <!-- The stand. -->
+  <path d="M27 42 L25 51 H39 L37 42 Z" fill="#eafcff"/>
+  <!-- Reaching in from here. -->
+  <path d="M9 55 L19.5 38" stroke="#FFD60A" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M24 29 L13.5 34.5 L25.5 41.5 Z" fill="#FFD60A" stroke="#FFD60A" stroke-width="2" stroke-linejoin="round"/>
+</svg>

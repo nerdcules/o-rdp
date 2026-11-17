@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+mkdir -p "$ROOT/${ORDP_TEST_BUILD:-build/tests}"
+cd "$ROOT/${ORDP_TEST_BUILD:-build/tests}"
+
+qmake6 "$ROOT/tests/ordp_tests.pro"
+make -j"$(nproc)"
+QT_QPA_PLATFORM=offscreen ./ordp_tests "$@"

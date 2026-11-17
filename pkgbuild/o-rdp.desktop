@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=o-rdp
+Comment=Find the PCs with Remote Desktop on your network and connect to them
+Comment[da]=Find pc’erne med Fjernskrivebord på dit netværk, og forbind til dem
+Exec=o-rdp
+Icon=o-rdp
+Terminal=false
+Categories=Network;RemoteAccess;
+Keywords=rdp;remote;desktop;windows;freerdp;
+StartupWMClass=o-rdp
