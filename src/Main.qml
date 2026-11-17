@@ -18,6 +18,7 @@ ApplicationWindow {
     Material.roundedScale: theme.radius
 
     property bool helpVisible: false
+    property bool aboutVisible: false
     property bool addVisible: false
     property bool forgetVisible: false
     readonly property real u: theme.fontScale
@@ -28,7 +29,8 @@ ApplicationWindow {
     readonly property bool typing: activeFocusItem instanceof TextInput
 
     function stepBack() {
-        if (helpVisible) helpVisible = false
+        if (aboutVisible) aboutVisible = false
+        else if (helpVisible) helpVisible = false
         else if (addVisible) addVisible = false
         else if (forgetVisible) forgetVisible = false
         else if (rdp.problem.text) rdp.clearProblem()
@@ -39,6 +41,7 @@ ApplicationWindow {
         list.currentIndex = Math.max(0, Math.min(rdp.hosts.length - 1, list.currentIndex + delta))
     }
 
+    Shortcut { sequence: "Ctrl+I"; context: Qt.ApplicationShortcut; onActivated: win.aboutVisible = !win.aboutVisible }
     Shortcut { sequence: "?"; enabled: !win.typing; context: Qt.ApplicationShortcut; onActivated: win.helpVisible = !win.helpVisible }
     Shortcut { sequence: "Escape"; context: Qt.ApplicationShortcut; onActivated: win.stepBack() }
     Shortcut { sequence: "Q"; enabled: !win.typing; context: Qt.ApplicationShortcut; onActivated: Qt.quit() }
@@ -307,5 +310,13 @@ ApplicationWindow {
                 }
             }
         }
+    }
+
+    AboutOverlay {
+        visible: win.aboutVisible
+        appName: "o-rdp"
+        purpose: qsTr("Find the PCs with Remote Desktop on your network and connect to them")
+        repository: "github.com/nerdcules/o-rdp"
+        onDismissed: win.aboutVisible = false
     }
 }

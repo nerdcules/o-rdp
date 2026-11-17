@@ -8,5 +8,7 @@
         <file alias="i18n/en.json">i18n/en.json</file>
         <file alias="i18n/da.json">i18n/da.json</file>
         <file alias="skill/SKILL.md">skill/SKILL.md</file>
+        <file alias="AboutOverlay.qml">AboutOverlay.qml</file>
+        <file alias="icon.svg">../pkgbuild/o-rdp.svg</file>
     </qresource>
 </RCC>

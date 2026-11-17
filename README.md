@@ -43,6 +43,7 @@ name and the last user), so either one picks up what the other learned.
 | Esc | Leave a field, or close what is open |
 | Ctrl + / - / 0 | Text larger, smaller, default |
 | ? | Every shortcut |
+| Ctrl + I | About o-rdp |
 | Q | Quit |
 
 ## Commands

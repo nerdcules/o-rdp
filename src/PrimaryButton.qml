@@ -6,7 +6,6 @@ import QtQuick.Controls
 Rectangle {
     id: button
     property string text
-    property bool enabled: true
     signal clicked()
     readonly property real u: theme.fontScale
 

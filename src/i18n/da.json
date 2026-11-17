@@ -50,5 +50,10 @@
   "The PC's certificate is not the one seen last time. If the PC was reinstalled that's expected; otherwise, be careful.": "Pc’ens certifikat er ikke det, der blev set sidst. Hvis pc’en er geninstalleret, er det forventeligt; ellers så vær forsigtig.",
   "Couldn't reach the PC on port 3389. Is it awake, with Remote Desktop turned on?": "Kunne ikke nå pc’en på port 3389. Er den vågen, med Fjernskrivebord slået til?",
   "The connection ended with an error (FreeRDP exit code %1).": "Forbindelsen sluttede med en fejl (FreeRDP-afslutningskode %1).",
-  "The connection ended with an error: %1": "Forbindelsen sluttede med en fejl: %1"
+  "The connection ended with an error: %1": "Forbindelsen sluttede med en fejl: %1",
+  "Version %1": "Version %1",
+  "An idea by Alan Seunarayan, developed with AI": "En idé af Alan Seunarayan, udviklet med AI",
+  "MIT licence": "MIT-licens",
+  "About this app": "Om programmet",
+  "Find the PCs with Remote Desktop on your network and connect to them": "Find pc’erne med Fjernskrivebord på dit netværk, og forbind til dem"
 }

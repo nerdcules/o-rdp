@@ -47,6 +47,7 @@ Rectangle {
                     ["Esc", qsTr("Leave a field, or close what is open")],
                     ["Ctrl + / -", qsTr("Make the text larger or smaller")],
                     ["?", qsTr("Show this help")],
+                    ["Ctrl + I", qsTr("About this app")],
                     ["Q", qsTr("Quit")]
                 ]
                 delegate: RowLayout {

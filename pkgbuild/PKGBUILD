@@ -4,7 +4,7 @@ pkgrel=1
 pkgdesc='Find the PCs with Remote Desktop on your network and connect to them'
 arch=('x86_64' 'aarch64')
 license=('MIT')
-depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'freerdp')
+depends=('qt6-base' 'qt6-declarative' 'qt6-svg' 'qt6-wayland' 'freerdp')
 optdepends=('libsecret: remember passwords in the keyring (secret-tool)'
             'avahi: names for PCs that answer neither NetBIOS nor DNS')
 makedepends=('gcc' 'make')
