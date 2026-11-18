@@ -63,7 +63,9 @@ o-rdp skill install              a short agent skill in ~/.claude/skills/o-rdp
 bin/install
 ```
 
-Needs `freerdp`; `libsecret` for the keyring and `avahi` for the last naming
+builds the package with `makepkg -fsi` (it asks for your password to
+install it), so o-rdp appears in the app launcher (Super + Space). Needs
+`freerdp`; `libsecret` for the keyring and `avahi` for the last naming
 step are optional.
 
 ## Development
