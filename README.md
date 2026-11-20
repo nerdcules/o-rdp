@@ -84,6 +84,20 @@ install it), so o-rdp appears in the app launcher (Super + Space). Needs
 `xfreerdp3`); `libsecret` for the keyring and `avahi` for the last naming
 step are optional.
 
+### Updating
+
+[`nerdcules-update`](https://github.com/nerdcules/nerdcules#updates) builds
+o-rdp from this repository's release tags and installs it, and goes back:
+
+```sh
+nerdcules-update apply o-rdp                 # the newest release
+nerdcules-update channel o-rdp prerelease    # also pre-releases (v1.2.0-rc.1); or main
+nerdcules-update rollback o-rdp              # the version before
+```
+
+No release is tagged yet, so the stable channel has nothing to offer; until
+one is, `nerdcules-update channel o-rdp main` follows every commit.
+
 ## Development
 
 ```sh
