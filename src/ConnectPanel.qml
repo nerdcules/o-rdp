@@ -5,12 +5,12 @@ import QtQuick.Layouts
 
 // Connecting to the selected PC: the user (last one used, remembered as
 // rdp-connect does), the password (from the keyring when it was kept there),
-// and how the window opens.
+// and whether the window goes full screen. A PC already open is shown.
 Rectangle {
     id: panel
     property var host: null
     readonly property real u: theme.fontScale
-    readonly property bool canConnect: host !== null && !rdp.freerdpMissing && !host.connected && user.text.trim() !== ""
+    readonly property bool canConnect: host !== null && (host.connected || user.text.trim() !== "")
 
     color: theme.panel
     radius: theme.radius
@@ -22,12 +22,18 @@ Rectangle {
     // to the first field that's missing.
     function start() {
         if (!host) return
+        if (host.connected) { connect(); return }
         if (user.text.trim() === "") { user.forceActiveFocus(); return }
         if (password.text === "") { password.forceActiveFocus(); return }
         connect()
     }
     function connect() {
         if (!canConnect) return
+        if (host.connected) {
+            rdp.show(host.address)
+            win.closeMenu()
+            return
+        }
         rdp.connectTo(host.address, user.text.trim(), password.text, remember.checked)
         password.text = remember.checked ? password.text : ""
     }
@@ -112,23 +118,25 @@ Rectangle {
                 checked: rdp.fullscreen
                 onToggled: rdp.fullscreen = checked
             }
-            CheckBox {
-                text: qsTr("Use all monitors")
-                checked: rdp.allMonitors
-                onToggled: rdp.allMonitors = checked
-            }
             PrimaryButton {
                 Layout.fillWidth: true
                 enabled: panel.canConnect
-                text: panel.host && panel.host.connected ? qsTr("Connected") : qsTr("Connect (Enter)")
+                text: panel.host && panel.host.connected ? qsTr("Show (Enter)") : qsTr("Connect (Enter)")
                 onClicked: panel.connect()
+            }
+            Button {
+                Layout.fillWidth: true
+                visible: panel.host !== null && panel.host.connected
+                flat: true
+                text: qsTr("Disconnect")
+                onClicked: rdp.disconnectFrom(panel.host.address)
             }
             Label {
                 Layout.fillWidth: true
                 wrapMode: Text.Wrap
                 color: theme.muted
                 font.pixelSize: Math.round(11 * panel.u)
-                text: qsTr("The password goes to FreeRDP through a pipe, never on a command line. The PC's certificate is trusted the first time and checked after that.")
+                text: qsTr("The PC opens inside this window. The password goes to FreeRDP inside o-rdp, never on a command line. The PC's certificate is trusted the first time and checked after that.")
             }
         }
     }

@@ -40,11 +40,13 @@ Rectangle {
             Repeater {
                 model: [
                     ["J / K, ↓ / ↑", qsTr("Select the next or previous PC")],
-                    ["Enter, Space", qsTr("Connect (or go to the field still missing)")],
+                    ["Enter, Space", qsTr("Connect (or go to the field still missing); show a PC already open")],
                     ["R", qsTr("Scan the network again")],
                     ["N", qsTr("Add a PC by address or name")],
                     ["Delete", qsTr("Forget the selected PC")],
                     ["Esc", qsTr("Leave a field, or close what is open")],
+                    ["Ctrl + Alt + Home", qsTr("Bring out the menu over the PC, or put it away")],
+                    ["Ctrl + Alt + Enter", qsTr("Full screen on or off while a PC is on show")],
                     ["Ctrl + / -", qsTr("Make the text larger or smaller")],
                     ["?", qsTr("Show this help")],
                     ["Ctrl + I", qsTr("About this app")],

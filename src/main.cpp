@@ -8,9 +8,11 @@
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QUrl>
+#include <QtQml>
 
 #include "backend.h"
 #include "cli.h"
+#include "rdpview.h"
 #include "theme.h"
 #include "translator.h"
 
@@ -40,6 +42,8 @@ int main(int argc, char *argv[]) {
     Theme theme;
     Backend backend;
 
+    qmlRegisterType<RdpView>("ORdp", 1, 0, "RdpView");
+    qmlRegisterUncreatableType<RdpSession>("ORdp", 1, 0, "RdpSession", "Sessions come from rdp.connectTo()");
     QQmlApplicationEngine engine;
     QObject::connect(&translator, &Translator::changed, &engine, &QQmlEngine::retranslate);
     engine.rootContext()->setContextProperty("translator", &translator);

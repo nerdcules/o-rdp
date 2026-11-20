@@ -5,6 +5,7 @@
 #include "backend.h"
 #include "hosts.h"
 #include "keyring.h"
+#include "rdpsession.h"
 #include "scanner.h"
 
 class OrdpTests : public QObject {
@@ -105,6 +106,33 @@ private slots:
                     .contains("port 3389"));
         QVERIFY(connectionProblem(147, "[ERROR][x] - [y]: something odd happened").contains("something odd happened"));
         QVERIFY(connectionProblem(147, "").contains("147"));
+        // What the window's own sessions report.
+        QVERIFY(connectionProblem(3, "PASSWORD_MISSING").contains("wants a password"));
+        QVERIFY(connectionProblem(3, "ERRCONNECT_ACCOUNT_LOCKED_OUT The account is locked").contains("locked out"));
+        QVERIFY(connectionProblem(3, "[ERROR][o-rdp]: ERRCONNECT_CONNECT_TRANSPORT_FAILED The connection transport layer failed.")
+                    .contains("broke off"));
+    }
+
+    void keysBecomeRdpScancodes() {
+        // XKB keycodes, as Qt reports them in nativeScanCode().
+        QCOMPARE(rdpScancode(38), quint32(0x1E));  // A
+        QCOMPARE(rdpScancode(36), quint32(0x1C));  // Return
+        QCOMPARE(rdpScancode(9), quint32(0x01));   // Escape
+        QCOMPARE(rdpScancode(37), quint32(0x1D));  // left Ctrl
+        QCOMPARE(rdpScancode(105), quint32(0x11D)); // right Ctrl, extended
+        QCOMPARE(rdpScancode(113), quint32(0x14B)); // Left arrow, extended
+        QCOMPARE(rdpScancode(108), quint32(0x138)); // AltGr, extended
+        QCOMPARE(rdpScancode(0), quint32(0));
+    }
+
+    void framesFitTheView() {
+        // Same size: one to one.
+        QCOMPARE(fitFrame(QSize(1600, 900), QSizeF(1600, 900)), QRectF(0, 0, 1600, 900));
+        // Twice the pixels on a 2x screen: drawn at half the size, filling it.
+        QCOMPARE(fitFrame(QSize(2000, 1200), QSizeF(1000, 600)), QRectF(0, 0, 1000, 600));
+        // Narrower than the view: bars left and right, the aspect kept.
+        QCOMPARE(fitFrame(QSize(800, 600), QSizeF(1000, 600)), QRectF(100, 0, 800, 600));
+        QVERIFY(fitFrame(QSize(), QSizeF(10, 10)).isEmpty());
     }
 
     void keyringKeepsPasswordsOffTheCommandLine() {
@@ -140,38 +168,41 @@ private slots:
         QVERIFY(!scanner.running());
     }
 
-    void connectSendsArgumentsThroughStdin() {
-        // A FreeRDP stand-in that keeps its arguments and its stdin.
+    void connectRunsInsideTheWindow() {
+        // A port nothing listens on: libfreerdp, in this process, can't reach it.
+        QTcpServer probe;
+        QVERIFY(probe.listen(QHostAddress::LocalHost));
+        const quint16 port = probe.serverPort();
+        probe.close();
+        const QString address = QString("127.0.0.1:%1").arg(port);
+
         QTemporaryDir directory;
-        const QString fake = directory.filePath("xfreerdp3");
-        QFile script(fake);
-        QVERIFY(script.open(QIODevice::WriteOnly));
-        script.write(QString("#!/bin/sh\nprintf '%s\\n' \"$@\" > '%1/argv'\ncat > '%1/stdin'\n"
-                             "echo '[ERROR][com.freerdp.core] - [nla]: ERRCONNECT_LOGON_FAILURE' >&2\nexit 131\n")
-                         .arg(directory.path())
-                         .toUtf8());
-        script.close();
-        script.setPermissions(script.permissions() | QFileDevice::ExeOwner);
         QList<QStringList> keyringCalls;
         Keyring keyring([&](const QStringList &arguments, const QByteArray &) {
             keyringCalls.append(arguments);
             return std::pair<int, QString>(0, QString());
         });
-        Backend backend(directory.filePath("known"), fake, keyring);
+        Backend backend(directory.filePath("known"), keyring);
         QSignalSpy problem(&backend, &Backend::problemChanged);
-        backend.connectTo("192.0.2.44", "alex", "s3cret", false);
-        QVERIFY(problem.wait(5000));
+        QSignalSpy shown(&backend, &Backend::sessionChanged);
+        backend.connectTo(address, "alex", "s3cret", false);
 
-        QFile argv(directory.filePath("argv")), input(directory.filePath("stdin"));
-        QVERIFY(argv.open(QIODevice::ReadOnly) && input.open(QIODevice::ReadOnly));
-        QCOMPARE(QString::fromUtf8(argv.readAll()).trimmed(), QString("/args-from:stdin")); // nothing else
-        const QStringList lines = QString::fromUtf8(input.readAll()).split('\n', Qt::SkipEmptyParts);
-        QCOMPARE(lines.first(), QString("/v:192.0.2.44"));
-        QVERIFY(lines.contains("/p:s3cret"));
-        QVERIFY(backend.lastArguments().contains("/p:***")); // nothing kept in memory in clear
-        QVERIFY(backend.problem().value("text").toString().contains("user name or password"));
-        // The user is remembered for next time, as rdp-connect does.
-        QCOMPARE(KnownHosts(directory.filePath("known")).find("192.0.2.44").user, QString("alex"));
+        // On show at once, and connecting once it has a size.
+        QVERIFY(backend.session());
+        QCOMPARE(backend.session()->property("address").toString(), address);
+        QVERIFY(backend.hosts().first().toMap().value("connected").toBool());
+        qobject_cast<RdpSession *>(backend.session())->resize(QSize(1280, 720), 100);
+
+        QVERIFY(problem.wait(15000));
+        QVERIFY2(backend.problem().value("text").toString().contains("port 3389"),
+                 qPrintable(backend.problem().value("details").toString()));
+        QVERIFY(!backend.session()); // the list is back
+        QCOMPARE(shown.count(), 2);
+        // The password is in no argument; the user is remembered, as rdp-connect does.
+        const QStringList arguments = backend.lastArguments();
+        QCOMPARE(arguments.first(), QString("/v:") + address);
+        QVERIFY(std::none_of(arguments.begin(), arguments.end(), [](const QString &a) { return a.contains("s3cret"); }));
+        QCOMPARE(KnownHosts(directory.filePath("known")).find(address).user, QString("alex"));
     }
 };
 

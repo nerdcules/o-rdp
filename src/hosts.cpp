@@ -197,6 +197,8 @@ QString connectionProblem(int exitCode, const QString &output) {
     auto has = [&](const char *text) { return output.contains(QLatin1String(text), Qt::CaseInsensitive); };
     if (has("LOGON_FAILURE") || has("STATUS_LOGON_FAILURE") || has("ERRCONNECT_AUTHENTICATION_FAILED"))
         return QObject::tr("The PC turned down the user name or password.");
+    if (has("PASSWORD_MISSING"))
+        return QObject::tr("The PC wants a password.");
     if (has("ACCOUNT_LOCKED_OUT"))
         return QObject::tr("The account is locked out on that PC.");
     if (has("ACCOUNT_DISABLED"))
@@ -208,6 +210,8 @@ QString connectionProblem(int exitCode, const QString &output) {
     if (has("ERRCONNECT_CONNECT_FAILED") || has("Connection refused") || has("No route to host") ||
         has("ERRCONNECT_DNS_NAME_NOT_FOUND") || has("Connection timed out"))
         return QObject::tr("Couldn't reach the PC on port 3389. Is it awake, with Remote Desktop turned on?");
+    if (has("ERRCONNECT_CONNECT_TRANSPORT_FAILED"))
+        return QObject::tr("The connection to the PC broke off.");
     // 0 is a normal end; 1 and 2 are the server ending the session
     // (disconnected or logged off), also normal from here.
     if (exitCode == 0 || exitCode == 1 || exitCode == 2)

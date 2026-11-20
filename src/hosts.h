@@ -57,8 +57,9 @@ QStringList hostAddresses(const Subnet &subnet);
 QByteArray netbiosQuery();
 QString netbiosName(const QByteArray &answer);
 
-// FreeRDP's arguments for one connection, one per line, as
-// `xfreerdp3 /args-from:stdin` reads them: the password goes to FreeRDP
+// FreeRDP's arguments for one connection. The window hands them to
+// libfreerdp in memory, without the password; `o-rdp connect` writes them,
+// one per line, to `xfreerdp3 /args-from:stdin`, so the password goes
 // through a pipe, never on a command line other programs can see.
 struct ConnectOptions {
     QString address;

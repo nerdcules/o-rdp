@@ -1,15 +1,15 @@
 #include "backend.h"
 
+#include <QClipboard>
+#include <QGuiApplication>
 #include <QHostAddress>
-#include <QProcess>
 #include <QRegularExpression>
-#include <QStandardPaths>
 #include <algorithm>
 
-Backend::Backend(const QString &known, const QString &program, Keyring keyring, QObject *parent)
-    : QObject(parent), m_known(known),
-      m_program(program.isEmpty() ? QStandardPaths::findExecutable("xfreerdp3") : program),
-      m_keyring(std::move(keyring)), m_settings("o-rdp", "o-rdp") {
+#include "rdpsession.h"
+
+Backend::Backend(const QString &known, Keyring keyring, QObject *parent)
+    : QObject(parent), m_known(known), m_keyring(std::move(keyring)), m_settings("o-rdp", "o-rdp") {
     connect(&m_scanner, &Scanner::found, this, [this](const QString &address) {
         m_online.insert(address);
         // Remembered as rdp-connect does, so the script sees it too.
@@ -28,7 +28,21 @@ Backend::Backend(const QString &known, const QString &program, Keyring keyring, 
         emit scanChanged();
         emit hostsChanged();
     });
+    // Text copied here goes to every open session's PC.
+    if (QClipboard *clipboard = QGuiApplication::clipboard())
+        connect(clipboard, &QClipboard::dataChanged, this, [this, clipboard] {
+            const QString text = clipboard->text();
+            for (RdpSession *session : std::as_const(m_sessions))
+                session->setLocalClipboard(text);
+        });
 }
+
+Backend::~Backend() {
+    // Each session's thread is stopped and joined as it goes.
+    qDeleteAll(m_sessions);
+}
+
+QObject *Backend::session() const { return m_sessions.value(m_shown); }
 
 QVariantList Backend::hosts() const {
     struct Row {
@@ -64,11 +78,6 @@ void Backend::setFullscreen(bool on) {
     emit optionsChanged();
 }
 
-void Backend::setAllMonitors(bool on) {
-    m_settings.setValue("allMonitors", on);
-    emit optionsChanged();
-}
-
 void Backend::scan() {
     m_online.clear();
     m_scanner.start();
@@ -83,8 +92,12 @@ QString Backend::savedPassword(const QString &address, const QString &user) cons
 }
 
 void Backend::connectTo(const QString &address, const QString &user, const QString &password, bool remember) {
-    if (m_program.isEmpty() || address.isEmpty() || user.isEmpty() || m_sessions.contains(address))
+    if (address.isEmpty() || user.isEmpty())
         return;
+    if (m_sessions.contains(address)) {
+        show(address);
+        return;
+    }
     m_known.remember(address, QString(), user);
     if (m_keyring.available()) {
         if (remember && !password.isEmpty())
@@ -95,38 +108,50 @@ void Backend::connectTo(const QString &address, const QString &user, const QStri
     ConnectOptions options;
     options.address = address;
     options.user = user;
-    options.password = password;
-    options.fullscreen = fullscreen();
-    options.allMonitors = allMonitors();
     options.extra = qEnvironmentVariable("RDP_OPTS");
-    const QStringList arguments = freerdpArguments(options);
-    // Recorded for tests without the password.
-    m_lastArguments = arguments;
-    m_lastArguments.replaceInStrings(QRegularExpression("^/p:.*$"), "/p:***");
+    // Full screen is the window's; the password goes into the connection's
+    // settings in memory, so it is no argument at all.
+    m_lastArguments = freerdpArguments(options);
 
-    auto *process = new QProcess(this);
-    process->setProcessChannelMode(QProcess::MergedChannels);
-    m_sessions.insert(address, process);
-    connect(process, &QProcess::finished, this, [this, process, address](int code, QProcess::ExitStatus status) {
-        ended(address, status == QProcess::NormalExit ? code : -1, QString::fromUtf8(process->readAll()));
+    auto *session = new RdpSession(address, m_lastArguments, password, this);
+    m_sessions.insert(address, session);
+    connect(session, &RdpSession::finished, this, [this, address](int code, const QString &output) {
+        ended(address, code, output);
     });
-    connect(process, &QProcess::errorOccurred, this, [this, process, address](QProcess::ProcessError error) {
-        if (error == QProcess::FailedToStart)
-            ended(address, -1, tr("FreeRDP could not be started: %1").arg(process->errorString()));
+    connect(session, &RdpSession::remoteClipboard, this, [](const QString &text) {
+        if (QClipboard *clipboard = QGuiApplication::clipboard())
+            clipboard->setText(text);
     });
-    // Every argument goes in through stdin, one per line: the password
-    // never appears in a command line other programs can read.
-    process->start(m_program, {"/args-from:stdin"});
-    process->write(arguments.join('\n').toUtf8() + '\n');
-    process->closeWriteChannel();
+    if (QClipboard *clipboard = QGuiApplication::clipboard())
+        session->setLocalClipboard(clipboard->text());
+    m_shown = address;
+    emit sessionChanged();
     emit hostsChanged();
     emit connected(address);
 }
 
+void Backend::show(const QString &address) {
+    const QString next = m_sessions.contains(address) ? address : QString();
+    if (next == m_shown)
+        return;
+    m_shown = next;
+    emit sessionChanged();
+}
+
+void Backend::disconnectFrom(const QString &address) {
+    if (RdpSession *session = m_sessions.value(address))
+        session->stop();
+}
+
 void Backend::ended(const QString &address, int exitCode, const QString &output) {
-    QProcess *process = m_sessions.take(address);
-    if (process)
-        process->deleteLater();
+    RdpSession *session = m_sessions.take(address);
+    if (m_shown == address) {
+        // Another open session takes its place, or the list does.
+        m_shown = m_sessions.isEmpty() ? QString() : m_sessions.constBegin().key();
+        emit sessionChanged();
+    }
+    if (session)
+        session->deleteLater();
     const QString problem = connectionProblem(exitCode, output);
     if (!problem.isEmpty()) {
         QStringList lines = output.split('\n', Qt::SkipEmptyParts);
